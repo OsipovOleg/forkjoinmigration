@@ -11,59 +11,20 @@ public class ForkJoinQueueingNetwork {
     private RandomVariable migrationTimeRV;
     private RandomVariable interarrivalTimeRV;
     private RandomVariable serviceTimeRV;
+    private RandomVariable taskCountRV;
 
-
-    /**
-     * A migration pair (from, to)
-     */
-    private class MigrationPair {
-        private int sourceIndex;
-        private int destinationIndex;
-        private double completionTime;
-
-
-        /**
-         * Create a new instance for a migration from node_sourceIndex to node_
-         *
-         * @param sourceIndex      index of source node
-         * @param destinationIndex index of destination node
-         * @param completionTime   completion time of the migration
-         */
-        public MigrationPair(int sourceIndex, int destinationIndex, double completionTime) {
-            this.sourceIndex = sourceIndex;
-            this.destinationIndex = destinationIndex;
-            this.completionTime = completionTime;
-        }
-
-        public int getSourceIndex() {
-            return sourceIndex;
-        }
-
-        public int getDestinationIndex() {
-            return destinationIndex;
-        }
-
-        public double getCompletionTime() {
-            return completionTime;
-        }
-
-    }
-
-    private enum EventType {
-        ARRIVAL,
-        START_SERVICE,
-        END_SERVICE
-    }
+    private MigrationPolicy migrationPolicy;
+    private DistributingPolicy distributingPolicy;
 
 
     /**
      * Global queue
      */
-    private Queue<Task> globalQueue;
+    private ArrayList<Task> globalQueue;
     /**
      * Array of local queues
      */
-    private Queue<Task>[] localQueues;
+    private ArrayList<Task>[] localQueues;
 
     /**
      * Available for migration nodes
@@ -75,8 +36,25 @@ public class ForkJoinQueueingNetwork {
     private double nextArrivalTime;
     private double[] startServiceTimes;
     private double[] endServiceTimes;
+    private double currentTime;
     //Migrations and completion times
     private ArrayList<MigrationPair> migrations;
+    //Task only in service process without migrating tasks
+    private int[] state;
+
+    //Demand counter
+    private int demandCounter;
+
+
+    private int[] getCurrentState() {
+        state[0] = globalQueue.size();
+        for (int i = 1; i < localQueues.length; i++) {
+            state[i] = localQueues[i - 1].size();
+        }
+
+        return state;
+
+    }
 
 
     /**
@@ -86,7 +64,7 @@ public class ForkJoinQueueingNetwork {
      */
     public void start(double time) {
 
-        double currentTime = 0;
+        currentTime = 0;
         nextArrivalTime = 0;
         Arrays.fill(startServiceTimes, Double.POSITIVE_INFINITY);
         Arrays.fill(endServiceTimes, Double.POSITIVE_INFINITY);
@@ -127,21 +105,23 @@ public class ForkJoinQueueingNetwork {
 
             //Run a handler for the current event
             if (nextEventTime == nextArrivalTime) {
+                arrivalEvent();
+            } else if (nextEventTime == startServiceTimes[startServiceIndex]) {
+                startServiceEvent(startServiceIndex);
 
-                tryMigration();
-                continue;
+            } else if (nextEventTime == endServiceTimes[endServiceIndex]) {
+                endServiceEvent(endServiceIndex);
+
+            } else if (nextEventTime == migrations.get(endMigrationIndex).getCompletionTime()) {
+
             }
-            if (nextEventTime == startServiceTimes[startServiceIndex]) {
-                tryMigration();
-                continue;
-            }
-            if (nextEventTime == endServiceTimes[endServiceIndex]) {
-                tryMigration();
-                continue;
-            }
-            if (nextEventTime == migrations.get(endMigrationIndex).getCompletionTime()) {
-                tryMigration();
-                continue;
+
+
+            //Check need for migrations and run it
+            List<MigrationPair> newMigrations = migrationPolicy.checkMigration(getCurrentState(), migrations);
+            for (MigrationPair migration :
+                    newMigrations) {
+                runMigration(migration.getSourceIndex(), migration.getDestinationIndex());
             }
         }
 
@@ -152,6 +132,22 @@ public class ForkJoinQueueingNetwork {
      * Handler of arriving
      */
     private void arrivalEvent() {
+        int countOfSiblings = (int) taskCountRV.nextValue();
+
+        //create tasks and try to distribute them
+        for (int i = 0; i < countOfSiblings; i++) {
+            Task task = new Task(demandCounter, currentTime, countOfSiblings);
+
+            Integer nodeIndex = distributingPolicy.nodeIndex(getCurrentState(), migrations);
+            if (nodeIndex != null) {
+                localQueues[nodeIndex].add(task);
+                startServiceTimes[nodeIndex] = currentTime;
+            } else {
+                globalQueue.add(task);
+            }
+        }
+
+
     }
 
     /**
@@ -160,6 +156,14 @@ public class ForkJoinQueueingNetwork {
      * @param index of node
      */
     private void startServiceEvent(int index) {
+        //check tasks in the queue
+        if (localQueues[index].size() > 0) {
+            //according to a PS discipline
+            if (endServiceTimes[index] == Double.POSITIVE_INFINITY) {
+                endServiceTimes[index] += serviceTimeRV.nextValue();
+            }
+        }
+        startServiceTimes[index] = Double.POSITIVE_INFINITY;
     }
 
     /**
@@ -168,24 +172,28 @@ public class ForkJoinQueueingNetwork {
      * @param index of node
      */
     private void endServiceEvent(int index) {
+        //choose a random task
+        int n = localQueues[index].size();
+        int i = random.nextInt(n);
+        Task task = localQueues[index].remove(i);
 
+        startServiceTimes[index] = currentTime;
+        endServiceTimes[index] = Double.POSITIVE_INFINITY;
     }
 
 
     /**
-     * Run migration process for a pair of nodes
+     * Start a migration process for a pair of nodes
      *
      * @param sourceIndex
      * @param destinationIndex
      */
-    private void runMigration(int sourceIndex, int destinationIndex) {
+    private void startMigration(int sourceIndex, int destinationIndex) {
 
     }
 
-    /**
-     * Make decision about starting migrations
-     */
-    private void tryMigration() {
+
+    private void endMigration(MigrationPair migration) {
 
     }
 

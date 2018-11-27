@@ -1,24 +1,33 @@
 public class Task {
 
-    private long parentId;
+    private int parentId;
+    private int countOfSiblings;
     private double arrivalTime;
     private double startServiceTime;
     private double endServiceTime;
     private double leaveTime;
 
 
-    public Task(long parentId, double arrivalTime) {
+    public Task(int parentId, double arrivalTime, int countOfSiblings) {
         this.parentId = parentId;
         this.arrivalTime = arrivalTime;
+        this.countOfSiblings = countOfSiblings;
     }
 
-
-    public long getParentId() {
+    public int getParentId() {
         return parentId;
     }
 
-    public void setParentId(long parentId) {
+    public void setParentId(int parentId) {
         this.parentId = parentId;
+    }
+
+    public int getCountOfSiblings() {
+        return countOfSiblings;
+    }
+
+    public void setCountOfSiblings(int countOfSiblings) {
+        this.countOfSiblings = countOfSiblings;
     }
 
     public double getArrivalTime() {
@@ -27,14 +36,6 @@ public class Task {
 
     public void setArrivalTime(double arrivalTime) {
         this.arrivalTime = arrivalTime;
-    }
-
-    public double getLeaveTime() {
-        return leaveTime;
-    }
-
-    public void setLeaveTime(double leaveTime) {
-        this.leaveTime = leaveTime;
     }
 
     public double getStartServiceTime() {
@@ -51,5 +52,13 @@ public class Task {
 
     public void setEndServiceTime(double endServiceTime) {
         this.endServiceTime = endServiceTime;
+    }
+
+    public double getLeaveTime() {
+        return leaveTime;
+    }
+
+    public void setLeaveTime(double leaveTime) {
+        this.leaveTime = leaveTime;
     }
 }
