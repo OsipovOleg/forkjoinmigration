@@ -9,14 +9,13 @@ public class ExpRV implements RandomVariable {
         this.random = random;
         this.rate = rate;
     }
-
     private double rate;
     private Random random;
 
 
     @Override
     public double nextValue() {
-        return -Math.log(random.nextDouble()) / rate;
+            return -Math.log(random.nextDouble()) / rate;
     }
 
     public double getRate() {

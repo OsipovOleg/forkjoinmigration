@@ -61,4 +61,19 @@ public class Task {
     public void setLeaveTime(double leaveTime) {
         this.leaveTime = leaveTime;
     }
+
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(this.parentId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (obj == this) return true;
+        if (!(obj instanceof Task)) return false;
+
+        return ((Task) obj).getParentId() == this.parentId;
+    }
 }

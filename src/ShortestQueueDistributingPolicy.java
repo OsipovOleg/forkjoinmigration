@@ -13,30 +13,24 @@ public class ShortestQueueDistributingPolicy implements DistributingPolicy {
     }
 
     /**
-     * Return a index of node for a new task for current state of nodes and migrations
+     * Return an index of node for a new task for the current state of nodes and migrations
      *
-     * @param state      state of nodes
-     * @param migrations current migration state
+     * @param localQueuesState      state of nodes (including migrations)
      * @return index of node or null
      */
     @Override
-    public Integer nodeIndex(int[] state, List<MigrationPair> migrations) {
-        int index = 0;
-        int[] capacities = state.clone();
+    public Integer nodeIndex(int[] localQueuesState) {
+        int minIndex = 0;
 
-        for (MigrationPair migration :
-                migrations) {
-            capacities[migration.getDestinationIndex()]++;
-            capacities[migration.getSourceIndex()]++;
-        }
-        for (int i = 1; i < state.length; i++) {
-            if (capacities[index] > capacities[i]) {
-                index = i;
+        //just find minimum index
+        for (int i = 1; i < localQueuesState.length; i++) {
+            if (localQueuesState[minIndex] > localQueuesState[i]) {
+                minIndex = i;
             }
         }
 
-        if (capacities[index] <= queuesCapacity)
-            return index;
+        if (localQueuesState[minIndex] <= queuesCapacity)
+            return minIndex;
         return null;
     }
 }

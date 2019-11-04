@@ -1,12 +1,18 @@
 import java.util.List;
+import java.util.Set;
 
+/**
+ *  Describe a migration policy
+ */
 public interface MigrationPolicy {
     /**
-     * Check migration conditions
+     * Checks migration conditions and returns a list with all proper migrations
      *
-     * @param currentState      state of queues (n_0, n_1, ..., n_(countOfNodes)
+     * @param currentState      state of queues (n_1, ..., n_(countOfNodes)
      * @param currentMigrations running migrations
      * @return list of new migrations
      */
-    public List<MigrationPair> checkMigration(int[] currentState, List<MigrationPair> currentMigrations);
+    List<Migration> checkMigration(int[] currentState,
+                                   List<Migration> currentMigrations,
+                                   Set<Integer> availableForMigrationNodes);
 }
